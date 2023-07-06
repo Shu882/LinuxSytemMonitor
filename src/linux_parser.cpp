@@ -1,10 +1,12 @@
+#include "linux_parser.h"
+
 #include <dirent.h>
 #include <unistd.h>
+
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
-
-#include "linux_parser.h"
 
 using std::stof;
 using std::string;
@@ -67,10 +69,25 @@ vector<int> LinuxParser::Pids() {
   return pids;
 }
 
-// TODO: Read and return the system memory utilization
-float LinuxParser::MemoryUtilization() { return 0.0; }
+// TODO: Read and return the system memory utilization, done
+float LinuxParser::MemoryUtilization() {
+  double memtotal, memfree;
+  string line, key;
+  std::ifstream stream(kProcDirectory+kMeminfoFilename);
+  if (stream.is_open()){
+    while(std::getline(stream, line)) {
+      std::istringstream linestream(line);
+      while (linestream >> key) {
+        if (key == "MemTotal:") linestream >> memtotal;
+        if (key == "MemFree:") linestream >> memfree;
+      }
+    }
+  }
+  float utilization = (memtotal - memfree)/memtotal;
+  return utilization;
+}
 
-// TODO: Read and return the system uptime
+// TODO: Read and return the system uptime, done
 long LinuxParser::UpTime() {
   long uptime;
   string line;
@@ -99,11 +116,41 @@ long LinuxParser::IdleJiffies() { return 0; }
 // TODO: Read and return CPU utilization
 vector<string> LinuxParser::CpuUtilization() { return {}; }
 
-// TODO: Read and return the total number of processes
-int LinuxParser::TotalProcesses() { return 0; }
+// TODO: Read and return the total number of processes, done
+int LinuxParser::TotalProcesses() {
+  int totalprocesses;
+  string line, key;
+  std::ifstream stream(kProcDirectory + kStatFilename);
+  if (stream.is_open()) {
+    while (std::getline(stream, line)){
+      std::istringstream linestream(line);
+      while(linestream >> key){
+        if (key == "processes"){
+          linestream >> totalprocesses;
+        }
+      }
+    };
+  }
+  return totalprocesses;
+}
 
-// TODO: Read and return the number of running processes
-int LinuxParser::RunningProcesses() { return 0; }
+// TODO: Read and return the number of running processes, done
+int LinuxParser::RunningProcesses() {
+  int runningprocesses;
+  string line, key;
+  std::ifstream stream(kProcDirectory + kStatFilename);
+  if (stream.is_open()) {
+    while (std::getline(stream, line)){
+      std::istringstream linestream(line);
+      while(linestream >> key){
+        if (key == "procs_running"){
+          linestream >> runningprocesses;
+        }
+      }
+    };
+  }
+  return runningprocesses;
+}
 
 // TODO: Read and return the command associated with a process
 // REMOVE: [[maybe_unused]] once you define the function
