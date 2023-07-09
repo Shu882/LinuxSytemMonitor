@@ -18,7 +18,7 @@ Process::Process(int pid){
   command_ = LinuxParser::Command(pid_);
   cpuUtilization_ = (static_cast<double>(LinuxParser::ActiveJiffies(pid)))/(static_cast<double>(LinuxParser::Jiffies()));
   ram_ = LinuxParser::Ram(pid_);
-  uptime_ = LinuxParser::UpTime(pid_);
+  uptime_ = LinuxParser::UpTime() - LinuxParser::UpTime(pid_);
 }
 
 int Process::Pid() { return pid_; }

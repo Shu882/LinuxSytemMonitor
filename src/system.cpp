@@ -1,7 +1,5 @@
 #include "system.h"
-
 #include <unistd.h>
-
 #include <cstddef>
 #include <set>
 #include <string>
@@ -19,9 +17,8 @@ using std::vector;
 Processor& System::Cpu() { return cpu_;}
 
 vector<Process>& System::Processes() {
-  for (int pid:LinuxParser::Pids()){
-    Process process(pid);
-    processes_.push_back(process);
+  for (const int &pid:LinuxParser::Pids()){
+    processes_.emplace_back(pid);
   }
   return processes_;
 }

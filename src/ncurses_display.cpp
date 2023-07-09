@@ -1,12 +1,9 @@
 #include "ncurses_display.h"
-
 #include <curses.h>
-
 #include <chrono>
 #include <string>
 #include <thread>
 #include <vector>
-
 #include "format.h"
 #include "system.h"
 

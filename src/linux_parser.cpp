@@ -1,5 +1,4 @@
 #include "linux_parser.h"
-
 #include <dirent.h>
 #include <unistd.h>
 #include <sstream>
@@ -72,8 +71,8 @@ float LinuxParser::MemoryUtilization() {
     while(std::getline(stream, line)) {
       std::istringstream linestream(line);
       while (linestream >> key) {
-        if (key == "MemTotal:") linestream >> memtotal;
-        if (key == "MemFree:") linestream >> memfree;
+        if (key == filterMemTotal) linestream >> memtotal;
+        if (key == filterMemFree) linestream >> memfree;
       }
     }
   }
@@ -103,7 +102,7 @@ long LinuxParser::Jiffies() {
 }
 
 long LinuxParser::ActiveJiffies(int pid) {
-  long utime, stime, cutime, cstime, starttime, totalTime, seconds;
+  long utime, stime, cutime, cstime, starttime;
   //get the values
   string line, nth;
   std::ifstream statfile(kProcDirectory + to_string(pid) + kStatFilename);
@@ -121,38 +120,6 @@ long LinuxParser::ActiveJiffies(int pid) {
     }
   }
   return utime + stime + cutime + cstime;
-}
-
-
-float LinuxParser::CpuUtilization(int pid) {
-  long uptime = UpTime(); // system uptime in seconds
-  long utime, stime, cutime, cstime, starttime, totalTime, seconds;
-  float cpuUsage;
-  //get the values
-  string line, nth;
-  std::ifstream statfile(kProcDirectory + to_string(pid) + kStatFilename);
-  if (statfile.is_open()){
-    while(getline(statfile, line)){
-      std::istringstream linestream(line);
-      for (int i=0; i<22; ++i){
-        if (i == 13) linestream >> utime;
-        else if (i == 14) linestream >> stime;
-        else if (i == 15) linestream >> cutime;
-        else if (i == 16) linestream >> cstime;
-        else if (i == 21) linestream >> starttime;
-        else linestream >> nth;
-      }
-    }
-  }
-  long HZ = sysconf(_SC_CLK_TCK);
-  totalTime = (utime + stime + cutime + cstime)/HZ; // total time spent on the process in seconds
-  seconds = uptime - (starttime/HZ); // total elapsed time in seconds since the process started
-  double total = totalTime;
-  cpuUsage = total / seconds;
-  if (cpuUsage < 1 && cpuUsage >=0)
-    return cpuUsage;
-  else
-    return 0.5;// default wrong value
 }
 
 long LinuxParser::ActiveJiffies() {
@@ -183,7 +150,7 @@ vector<string> LinuxParser::CpuUtilization() {
     while (std::getline(stream, line)){
       std::istringstream linestream(line);
       while(linestream >> key){
-        if (key == "cpu"){
+        if (key == filterCpu){
           linestream >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal >> guest >> guest_nice;
         }
       }
@@ -201,7 +168,7 @@ int LinuxParser::TotalProcesses() {
     while (std::getline(stream, line)){
       std::istringstream linestream(line);
       while(linestream >> key){
-        if (key == "processes"){
+        if (key == filterProcess){
           linestream >> totalprocesses;
         }
       }
@@ -218,7 +185,7 @@ int LinuxParser::RunningProcesses() {
     while (std::getline(stream, line)){
       std::istringstream linestream(line);
       while(linestream >> key){
-        if (key == "procs_running"){
+        if (key == filterRunningProcess){
           linestream >> runningprocesses;
         }
       }
@@ -242,7 +209,9 @@ string LinuxParser::Ram(int pid) {
     while(getline(statusfile, line)){
       std::istringstream linestream(line);
       while(linestream >> key){
-        if (key == "VmSize:")
+        // used VmRSS b/c it gives the exact physical memory being used as a part of the physical RAM
+        // while VmSize is the virtual memory size, which could be more than the physical RAM size
+        if (key == filterProcMem)
           linestream >> ram;
       }
     }
@@ -258,7 +227,7 @@ string LinuxParser::Uid(int pid) {
     while(getline(statusfile, line)){
       std::istringstream linestream(line);
       while(linestream >> key){
-        if (key == "Uid:")
+        if (key == filterUid)
           linestream >> uid;
       }
     }
@@ -281,7 +250,7 @@ string LinuxParser::User(int pid) {
       }
     }
   }
-  return "me";
+  return user;
 }
 
 long LinuxParser::UpTime(int pid) {
